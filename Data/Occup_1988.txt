@@ -1,0 +1,4 @@
+gridcode	Shape_Area	Classe	Perimetre
+2	1042416,974	Vegetation	38,85821362
+1	335571,3011	Sol nu	13,42748763
+3	3349543,932	Bâti	41,3593847
