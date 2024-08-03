@@ -7,6 +7,7 @@ library(ggthemes)
 library(readr)
 library(jpeg)
 library(sf)
+library(DT)
 
 #####################Définition de l'interface utilisateur###########
 ui<-dashboardPage(
@@ -15,7 +16,7 @@ ui<-dashboardPage(
     sidebarMenu(
       menuItem('Présentation de la zone',tabName = 'menu1',icon = icon('flag')),
       menuItem('Equipe du Projet',tabName = 'menu4',icon = icon('people-group')),
-      menuItem('Mission du Projet',tabName = 'menu2',icon = icon('laptop')),
+      menuItem('Objectifs du Projet',tabName = 'menu2',icon = icon('laptop')),
       menuItem('Présentation des Résultats',tabName = 'menu3',icon = icon('square-poll-vertical'),
                menuSubItem('Occupation du sol',tabName = 'submenu1',icon = icon('map')),
                menuSubItem('La Topographie',tabName = 'submenu2',icon = icon('mound')),
@@ -38,9 +39,10 @@ ui<-dashboardPage(
 
       tabItems(
         tabItem(tabName = 'menu1',
-                h2('Présentation de la zone'),leafletOutput("map")),
+                h2('Présentation de la zone'),leafletOutput("map"),
+                h2('Quartiers DSM'),DTOutput("dataTable")),
         tabItem(tabName = 'menu4',h2('Equipe du Projet')),
-        tabItem(tabName = 'menu2',h2('Mission du Projet')),
+        tabItem(tabName = 'menu2',h2('Objectifs du Projet')),
         tabItem(tabName = 'menu3',h2('Présentation des Résultats')),
         tabItem(tabName = 'submenu1',h2('Occupation du sol'),
                 plotOutput("barplot"),
@@ -84,9 +86,9 @@ server <- function(input, output) {
   output$map <- renderLeaflet({
     leaflet() %>%
       addProviderTiles(providers$OpenStreetMap) %>%
-      addMarkers(lng = -17.475031022450768,lat = 14.761666687759908,popup = "Diamaguene 
+      addMarkers(lng = -17.352540491056484,lat = 14.767247041989215,popup = "Diamaguene 
                  Sicap Mbao")%>%
-      setView(lng = -17.475031022450768, lat = 14.761666687759908, zoom = 12)
+      setView(lng = -17.352540491056484, lat = 14.767247041989215, zoom = 12)
   })
   
   #Lecture du fichier de l'occupation du sol
@@ -131,6 +133,17 @@ server <- function(input, output) {
   #######################Localisation des points d'eau##########################
   point_eau<-st_read("C:/Users/pc gz/Desktop/SdAfrique/Projet/myrepo/Data/Points_d'eau_DSM.shp")
   plot(st_geometry(point_eau))
+  table_point_eau<-read.csv2("C:/Users/pc gz/Desktop/SdAfrique/Projet/myrepo/
+                             Data/table_points_o.csv")
+  View(table_point_eau)
+  
+  quartiers_DSM<-read.csv2("Data/Quartiers.csv")
+  View(quartiers_DSM)
+  #Lecture de la table dans le Server
+  output$dataTable <- renderDT({
+    datatable(quartiers_DSM)
+    })
+
   #verification des coordonnées
   coords <- st_coordinates(point_eau)
   coords
