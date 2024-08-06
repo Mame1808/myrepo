@@ -40,7 +40,7 @@ ui<-dashboardPage(
       tabItems(
         tabItem(tabName = 'menu1',
                 h2('Présentation de la zone'),leafletOutput("map"),
-                h2('Quartiers DSM'),DTOutput("dataTable")),
+                h2('Quartiers DSM'),DT::dataTableOutput('quartiers_DSM1')),
         tabItem(tabName = 'menu4',h2('Equipe du Projet')),
         tabItem(tabName = 'menu2',h2('Objectifs du Projet')),
         tabItem(tabName = 'menu3',h2('Présentation des Résultats')),
@@ -133,20 +133,23 @@ server <- function(input, output) {
   #######################Localisation des points d'eau##########################
   point_eau<-st_read("C:/Users/pc gz/Desktop/SdAfrique/Projet/myrepo/Data/Points_d'eau_DSM.shp")
   plot(st_geometry(point_eau))
-  table_point_eau<-read.csv2("C:/Users/pc gz/Desktop/SdAfrique/Projet/myrepo/
-                             Data/table_points_o.csv")
+  table_point_eau<-read.csv2("Data/table_points_o.csv")
   View(table_point_eau)
   
+  #Visualisation des quartiers dans la partie presentation de la zone
   quartiers_DSM<-read.csv2("Data/Quartiers.csv")
   View(quartiers_DSM)
-  #Lecture de la table dans le Server
-  output$dataTable <- renderDT({
-    datatable(quartiers_DSM)
+  quartiers_DSM1<-as.data.frame(quartiers_DSM)
+  quartiers_DSM1
+  t#Lecture de la table dans le Server
+  output$quartiers <- DT::renderDataTable({
+    DT::datatable(quartiers_DSM1)
     })
 
   #verification des coordonnées
   coords <- st_coordinates(point_eau)
   coords
+  #Affichage des points d'eau
   output$point_map<-renderLeaflet({
     leaflet()%>%
       addProviderTiles(providers$Esri.WorldImagery)%>%
