@@ -1,4 +1,4 @@
-#Les Packages 
+# Les Packages 
 library(shiny)
 library(shinydashboard)
 library(leaflet)
@@ -8,76 +8,85 @@ library(readr)
 library(jpeg)
 library(sf)
 library(DT)
+library(sp)
+library(raster)
+library(dplyr)
 
-#####################Définition de l'interface utilisateur###########
-ui<-dashboardPage(
+
+##################### Définition de l'interface utilisateur ###########
+ui <- dashboardPage(
   dashboardHeader(),
   dashboardSidebar(
     sidebarMenu(
-      menuItem('Présentation de la zone',tabName = 'menu1',icon = icon('flag')),
-      menuItem('Equipe du Projet',tabName = 'menu4',icon = icon('people-group')),
-      menuItem('Objectifs du Projet',tabName = 'menu2',icon = icon('laptop')),
-      menuItem('Présentation des Résultats',tabName = 'menu3',icon = icon('square-poll-vertical'),
-               menuSubItem('Occupation du sol',tabName = 'submenu1',icon = icon('map')),
-               menuSubItem('La Topographie',tabName = 'submenu2',icon = icon('mound')),
-               menuSubItem('Analyse Hydrologique',tabName = 'submenu3',icon = icon('water')),
-               menuSubItem('Localisation des points',tabName = 'submenu4',icon = icon('location-dot'))
-               ),
-      menuItem('Détection zones inondables',tabName = 'menu5',icon = icon('fa-sharp fa-solid fa-house-water'))
-    ),
-    menuItem('Formulaire de Collecte',tabName = 'menu6')
+      menuItem('Présentation de la zone', tabName = 'menu1', icon = icon('flag')),
+      menuItem('Présentation des Résultats', tabName = 'menu3', icon = icon('square-poll-vertical'),
+               menuSubItem('Analyse Topographique', tabName = 'submenu2', icon = icon('mound')),
+               menuSubItem('Analyse Hydrologique', tabName = 'submenu3', icon = icon('water')),
+               menuSubItem('Localisation des points', tabName = 'submenu4', icon = icon('location-dot'))
+      )
+    )
   ),
   
-  ############### Corp du tableau de bord#############################"
+  ############### Corps du tableau de bord #############################
   dashboardBody(
     tags$head(tags$style(HTML("
         #map {
           height: 600vh;
         }
       "))
-  ),
-
-      tabItems(
-        tabItem(tabName = 'menu1',
-                h2('Présentation de la zone'),leafletOutput("map"),
-                h2('Quartiers DSM'),DTOutput("dataTable")),
-        tabItem(tabName = 'menu4',h2('Equipe du Projet')),
-        tabItem(tabName = 'menu2',h2('Objectifs du Projet')),
-        tabItem(tabName = 'menu3',h2('Présentation des Résultats')),
-        tabItem(tabName = 'submenu1',h2('Occupation du sol'),
-                plotOutput("barplot"),
-                fluidRow(
-                  box(
-                    title="",width=9,solidHeader=TRUE,status="primary",
-                    div(class="center-left",plotOutput("occupation_1988"))
-                  ))
-                ),
-        tabItem(tabName = 'submenu2',h2('La Topographie'),
-                fluidRow(
-                  box(
+    ),
+    
+    tabItems(
+      tabItem(tabName = 'menu1',
+              h2('Présentation de la zone'), leafletOutput("map"),
+              fluidRow(
+                box(
+                  title = "Quartiers DSM",
+                  width = 12,
+                  solidHeader = TRUE,
+                  status = "primary",
+                  dataTableOutput("quartiers")
+                )
+              ),
+              fluidRow(
+                box(
+                  title = "Occupation du sol",
+                  width = 12,
+                  solidHeader = TRUE,
+                  status = "primary",
+                  plotOutput("barplot")
+                )
+              ),  
+              fluidRow(
+                box(
+                  title = "", width = 9, solidHeader = TRUE, status = "primary",
+                  div(class = "center-left", plotOutput("occupation_1988"))
+                )
+              )
+      ),
+      
+      tabItem(tabName = 'menu3', h2('Présentation des Résultats')),
+      tabItem(tabName = 'submenu2', h2('La Topographie'),
+              fluidRow(
+                box(
                   title = "Topographie",
                   width = 9,
                   solidHeader = TRUE,
                   status = "primary",
-                  img(src = "Altitudes.jpg", width = "100%")
-                  )),
-                fluidRow(
-                  box(
-                  title = "Topographie",
-                  width = 9,
-                  solidHeader = TRUE,
-                  status = "warning",
                   img(src = "Pente.jpg", width = "100%")
                 )
-              )),
-        tabItem(tabName = 'submenu3',h2('Analyse Hydrologique')),
-        tabItem(tabName = 'submenu4',h2('Localisation des points'),
-                leafletOutput("point_map")),
-        tabItem(tabName = 'menu5',h2('Détection des zone inondées')),
-        tabItem(tabName = 'menu6',h2('Formulaire de Collecte'))
-      )
+              ),
+              h2("Élévation"),
+              plotOutput("mnt_plot")
+      ),
+      
+      tabItem(tabName = 'submenu3', h2('Analyse Hydrologique')),
+      tabItem(tabName = 'submenu4', h2('Localisation des points'),
+              leafletOutput("point_map")),
+      tabItem(tabName = 'menu5', h2('Détection des zones inondées'))
+    )
   )
-  )
+)
 
 
 
@@ -133,20 +142,23 @@ server <- function(input, output) {
   #######################Localisation des points d'eau##########################
   point_eau<-st_read("C:/Users/pc gz/Desktop/SdAfrique/Projet/myrepo/Data/Points_d'eau_DSM.shp")
   plot(st_geometry(point_eau))
-  table_point_eau<-read.csv2("C:/Users/pc gz/Desktop/SdAfrique/Projet/myrepo/
-                             Data/table_points_o.csv")
+  table_point_eau<-read.csv2("Data/table_points_o.csv")
   View(table_point_eau)
   
+  #Visualisation des quartiers dans la partie presentation de la zone
   quartiers_DSM<-read.csv2("Data/Quartiers.csv")
   View(quartiers_DSM)
-  #Lecture de la table dans le Server
-  output$dataTable <- renderDT({
-    datatable(quartiers_DSM)
+  quartiers_DSM1<-as.data.frame(quartiers_DSM)
+  quartiers_DSM1
+  t#Lecture de la table dans le Server
+  output$quartiers <- DT::renderDataTable({
+    DT::datatable(quartiers_DSM1)
     })
 
   #verification des coordonnées
   coords <- st_coordinates(point_eau)
   coords
+  #Affichage des points d'eau
   output$point_map<-renderLeaflet({
     leaflet()%>%
       addProviderTiles(providers$Esri.WorldImagery)%>%
@@ -158,6 +170,33 @@ server <- function(input, output) {
                         stroke = FALSE,
                         fillOpacity = 0.8)
   })
+  
+  #Traitement du MNT
+  MNT<-raster("Data/MNT_DSM.tif")
+  plot(MNT)
+  View(MNT)
+  
+  # Convertir le raster en data.frame pour ggplot
+  mnt_DK <- as.data.frame(rasterToPoints(MNT), stringsAsFactors = FALSE)
+  colnames(mnt_DK) <- c("x", "y", "elevation")
+  
+  #Creation du plot du Modèle Dakar
+  output$mnt_plot <- renderPlot({
+    ggplot(mnt_DK, aes(x = x, y = y, fill = elevation)) +
+      geom_tile() +
+      scale_fill_viridis_c(option = "C") +
+      coord_equal() +
+      labs(title = "Modèle Numérique de Terrain Diamaguene Sicap Mbao",
+           fill = "Elevation (m)") +
+      theme_minimal() +
+      theme(plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+            axis.title = element_text(size = 15, face = "bold"),
+            legend.title = element_text(size = 15, face = "bold"),
+            legend.text = element_text(size = 12, face = "bold"))
+  })
+  
+  
  
 }
 shinyApp(ui, server)
+*
