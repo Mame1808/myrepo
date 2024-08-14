@@ -8,6 +8,10 @@ library(readr)
 library(jpeg)
 library(sf)
 library(DT)
+library(sp)
+library(raster)
+library(dplyr)
+
 
 #####################Définition de l'interface utilisateur###########
 ui<-dashboardPage(
@@ -40,7 +44,14 @@ ui<-dashboardPage(
       tabItems(
         tabItem(tabName = 'menu1',
                 h2('Présentation de la zone'),leafletOutput("map"),
-                h2('Quartiers DSM'),DT::dataTableOutput('quartiers_DSM1')),
+                fluidRow(
+                  box(
+                    title = "Quartiers DSM",
+                    width = 12,
+                    solidHeader = TRUE,
+                    status = "primary",
+                    dataTableOutput("quartiers"))
+                )),
         tabItem(tabName = 'menu4',h2('Equipe du Projet')),
         tabItem(tabName = 'menu2',h2('Objectifs du Projet')),
         tabItem(tabName = 'menu3',h2('Présentation des Résultats')),
@@ -59,17 +70,12 @@ ui<-dashboardPage(
                   width = 9,
                   solidHeader = TRUE,
                   status = "primary",
-                  img(src = "Altitudes.jpg", width = "100%")
-                  )),
-                fluidRow(
-                  box(
-                  title = "Topographie",
-                  width = 9,
-                  solidHeader = TRUE,
-                  status = "warning",
                   img(src = "Pente.jpg", width = "100%")
-                )
-              )),
+                  )),
+                h2("Elévation"),
+                plotOutput("mnt_plot")
+              ),
+        
         tabItem(tabName = 'submenu3',h2('Analyse Hydrologique')),
         tabItem(tabName = 'submenu4',h2('Localisation des points'),
                 leafletOutput("point_map")),
@@ -161,6 +167,33 @@ server <- function(input, output) {
                         stroke = FALSE,
                         fillOpacity = 0.8)
   })
+  
+  #Traitement du MNT
+  MNT<-raster("Data/MNT_DSM.tif")
+  plot(MNT)
+  View(MNT)
+  
+  # Convertir le raster en data.frame pour ggplot
+  mnt_DK <- as.data.frame(rasterToPoints(MNT), stringsAsFactors = FALSE)
+  colnames(mnt_DK) <- c("x", "y", "elevation")
+  
+  #Creation du plot du Modèle Dakar
+  output$mnt_plot <- renderPlot({
+    ggplot(mnt_DK, aes(x = x, y = y, fill = elevation)) +
+      geom_tile() +
+      scale_fill_viridis_c(option = "C") +
+      coord_equal() +
+      labs(title = "Modèle Numérique de Terrain Diamaguene Sicap Mbao",
+           fill = "Elevation (m)") +
+      theme_minimal() +
+      theme(plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+            axis.title = element_text(size = 15, face = "bold"),
+            legend.title = element_text(size = 15, face = "bold"),
+            legend.text = element_text(size = 12, face = "bold"))
+  })
+  
+  
  
 }
 shinyApp(ui, server)
+*
