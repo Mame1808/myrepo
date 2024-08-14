@@ -1,4 +1,4 @@
-#Les Packages 
+# Les Packages 
 library(shiny)
 library(shinydashboard)
 library(leaflet)
@@ -13,77 +13,80 @@ library(raster)
 library(dplyr)
 
 
-#####################Définition de l'interface utilisateur###########
-ui<-dashboardPage(
+##################### Définition de l'interface utilisateur ###########
+ui <- dashboardPage(
   dashboardHeader(),
   dashboardSidebar(
     sidebarMenu(
-      menuItem('Présentation de la zone',tabName = 'menu1',icon = icon('flag')),
-      menuItem('Equipe du Projet',tabName = 'menu4',icon = icon('people-group')),
-      menuItem('Objectifs du Projet',tabName = 'menu2',icon = icon('laptop')),
-      menuItem('Présentation des Résultats',tabName = 'menu3',icon = icon('square-poll-vertical'),
-               menuSubItem('Occupation du sol',tabName = 'submenu1',icon = icon('map')),
-               menuSubItem('La Topographie',tabName = 'submenu2',icon = icon('mound')),
-               menuSubItem('Analyse Hydrologique',tabName = 'submenu3',icon = icon('water')),
-               menuSubItem('Localisation des points',tabName = 'submenu4',icon = icon('location-dot'))
-               ),
-      menuItem('Détection zones inondables',tabName = 'menu5',icon = icon('fa-sharp fa-solid fa-house-water'))
-    ),
-    menuItem('Formulaire de Collecte',tabName = 'menu6')
+      menuItem('Présentation de la zone', tabName = 'menu1', icon = icon('flag')),
+      menuItem('Présentation des Résultats', tabName = 'menu3', icon = icon('square-poll-vertical'),
+               menuSubItem('Analyse Topographique', tabName = 'submenu2', icon = icon('mound')),
+               menuSubItem('Analyse Hydrologique', tabName = 'submenu3', icon = icon('water')),
+               menuSubItem('Localisation des points', tabName = 'submenu4', icon = icon('location-dot'))
+      )
+    )
   ),
   
-  ############### Corp du tableau de bord#############################"
+  ############### Corps du tableau de bord #############################
   dashboardBody(
     tags$head(tags$style(HTML("
         #map {
           height: 600vh;
         }
       "))
-  ),
-
-      tabItems(
-        tabItem(tabName = 'menu1',
-                h2('Présentation de la zone'),leafletOutput("map"),
-                fluidRow(
-                  box(
-                    title = "Quartiers DSM",
-                    width = 12,
-                    solidHeader = TRUE,
-                    status = "primary",
-                    dataTableOutput("quartiers"))
-                )),
-        tabItem(tabName = 'menu4',h2('Equipe du Projet')),
-        tabItem(tabName = 'menu2',h2('Objectifs du Projet')),
-        tabItem(tabName = 'menu3',h2('Présentation des Résultats')),
-        tabItem(tabName = 'submenu1',h2('Occupation du sol'),
-                plotOutput("barplot"),
-                fluidRow(
-                  box(
-                    title="",width=9,solidHeader=TRUE,status="primary",
-                    div(class="center-left",plotOutput("occupation_1988"))
-                  ))
-                ),
-        tabItem(tabName = 'submenu2',h2('La Topographie'),
-                fluidRow(
-                  box(
+    ),
+    
+    tabItems(
+      tabItem(tabName = 'menu1',
+              h2('Présentation de la zone'), leafletOutput("map"),
+              fluidRow(
+                box(
+                  title = "Quartiers DSM",
+                  width = 12,
+                  solidHeader = TRUE,
+                  status = "primary",
+                  dataTableOutput("quartiers")
+                )
+              ),
+              fluidRow(
+                box(
+                  title = "Occupation du sol",
+                  width = 12,
+                  solidHeader = TRUE,
+                  status = "primary",
+                  plotOutput("barplot")
+                )
+              ),  
+              fluidRow(
+                box(
+                  title = "", width = 9, solidHeader = TRUE, status = "primary",
+                  div(class = "center-left", plotOutput("occupation_1988"))
+                )
+              )
+      ),
+      
+      tabItem(tabName = 'menu3', h2('Présentation des Résultats')),
+      tabItem(tabName = 'submenu2', h2('La Topographie'),
+              fluidRow(
+                box(
                   title = "Topographie",
                   width = 9,
                   solidHeader = TRUE,
                   status = "primary",
                   img(src = "Pente.jpg", width = "100%")
-                  )),
-                h2("Elévation"),
-                plotOutput("mnt_plot")
+                )
               ),
-        
-        tabItem(tabName = 'submenu3',h2('Analyse Hydrologique')),
-        tabItem(tabName = 'submenu4',h2('Localisation des points'),
-                leafletOutput("point_map")),
-        tabItem(tabName = 'menu5',h2('Détection des zone inondées')),
-        tabItem(tabName = 'menu6',h2('Formulaire de Collecte'))
-      )
+              h2("Élévation"),
+              plotOutput("mnt_plot")
+      ),
+      
+      tabItem(tabName = 'submenu3', h2('Analyse Hydrologique')),
+      tabItem(tabName = 'submenu4', h2('Localisation des points'),
+              leafletOutput("point_map")),
+      tabItem(tabName = 'menu5', h2('Détection des zones inondées'))
+    )
   )
-  )
+)
 
 
 
