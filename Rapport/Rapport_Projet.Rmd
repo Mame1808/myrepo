@@ -41,20 +41,31 @@ numérique de terrain et de la collecte des points d’eau**
 - *Analyse des facteurs physiques du milieu : la topographie et l’hydrologie*
 - *Analyse la dynamique d’occupation du sol et de la population*
 
+```{r}
+# Chargement des packages
+library(sf)
+library(sp)
+library(leaflet)
+library(viridis)
+library(raster)
+library(sp)
+library(stars)
+library(ggplot2)
+library(terra)
+```
+
 # Présentation de la zone d'étude #
 
 ```{r}
-library(sf)
-library(sp)
+#Ajout de la limite de la zone d'etude
 zone_etude<- st_read("Data/Quartiers_comm.shp", quiet = TRUE)
+#Reprojection en degree minite seconde
 zone_etude1<-st_transform(zone_etude,crs = 4326)
 ```
 
 
 ```{r}
-library(leaflet)
-library(viridis)
-
+#Visualisation de la zone d'etude
 pal <- colorFactor(palette = viridis(length(unique(zone_etude1$QRT_VLG_HA))), 
                    domain = zone_etude$QRT_VLG_HA)
 leaflet(zone_etude1)%>%
@@ -62,7 +73,7 @@ leaflet(zone_etude1)%>%
   addPolygons(color = ~pal(QRT_VLG_HA),
               fillOpacity = 0.7,
               weight = 1)%>%
-  setView(lng = -17.352540491056484, lat = 14.767247041989215, zoom = 12)
+  setView(lng = -17.352540491056484, lat = 14.767247041989215, zoom = 13)
 ```
 # Présentation du projet #
 
@@ -74,33 +85,39 @@ leaflet(zone_etude1)%>%
 # Présentation des résultats #
 
 ## Etude de la topographie de la zone d'étude ##
-```{r}
-library(raster)
-library(sp)
-mnt<-raster("Data/Pente.tif")
-```
+
+### Exploitation du modèle numérique de terrain  ###
 
 ```{r}
-library(sf)
+#Ajout du MNT de la region de Dakar
+mnt<-raster("Data/Mnt_Dk.tif")
+plot(mnt)
+title("Modèle Numérique de Terrain de la région de Dakar")
+```
+<div>
+### Couper la zone d'étude à partir de la limite ###
+```{r}
+#Ajouter la limite de la zone d'etude
 zone_DSM<-st_read("Data/Polygone_DSM.shp")
+plot(st_geometry(zone_DSM))
+title("Limite de la zone d'étude")
 ```
 
 ```{r}
 mnt_DSM<-crop(mnt,zone_DSM)
 plot(mnt_DSM)
+title("Modèle Numérique de Terrain de la Commune de DSM")
+
 ```
+</div>
 
+## Détection des zones inondées à partir du MNT##
 
-## Détection des zones inondées ##
+<div class="pixel">
+  <div class="raster"> 
+### Apperçue d'un modèle numérique de terrain ###
 ```{r}
-#Sauvegarde du modèle numérique de terrain de la zone d'étude
-library(raster)
-library(sp)
-#writeRaster(mnt_DSM,"C:/Users/pc gz/Desktop/Local/Local_traitement/mnt_zone.tif",format="GTiff",overwrite=TRUE)
-```
-
-```{r}
-library(stars)
+#Explication d'un MNT
 par(mfrow = c(2, 2))
 par(mar = rep(1, 4))
 tif<-mnt_DSM
@@ -109,138 +126,128 @@ set.seed(131)
 pts <- st_sample(st_as_sfc(st_bbox(tif)), 3)
 plot(st_buffer(pts, 200), add = TRUE, pch = 3, border = 'blue', col = NA, lwd = 2)
 ```
-
-```{r}
-#fPoints_value<-extract(tif, point_inond) # query at points
-#aggregate(x, st_buffer(pts, 500), FUN = mean) |> st_as_sf() # aggregate over circles
-```
-
+  </div>
+  <div class="value">
 ```{r}
 # Créer un dataframe avec les valeurs extraites
 value_pixel<-getValues(tif)
 #print(value_pixel)
-df_pixels <- data.frame(matrix(value_pixel[1:100], nrow = 5, byrow = TRUE))
-
+df_pixels <- data.frame(matrix(value_pixel[1:50], nrow = 5, byrow = TRUE))
 # Afficher les 10 premières lignes et colonnes
 print(df_pixels)
 
-
-# Afficher le dataframe
-
 ```
+  </div>
+</div>
+
+### Reclassification des altitudes ###
+
+<div>
+#### Ajouter la localisation des points inondés et non inondés ####
 ```{r}
-library(sf)
+#Ajout des points inondes
 point_inond<-st_read("Data/Points_d'eau_DSM.shp")
 plot(point_inond)
 ```
+
 ```{r}
-library(sf)
+#Ajout des points non inondes
 point_non_inond<-st_read("C:/Users/pc gz/Desktop/Local/Local_traitement/Data/Point_Alt.shp")
 plot(st_geometry(point_non_inond))
 ```
 
+</div>
+### Extraction de la valeur des pixels ###
+
+#### Extraction des points inondables ####
 ```{r}
-#Extraction des valeurs des pixels
+point_inond<-st_transform(point_inond,crs = 32628)
 inondables <- extract(tif, point_inond)
 inondables
-```
 
+```
+#### Extraction des points non inondables ####
 ```{r}
-non_inondables<-extract(tif, point_inond)
+non_inondables<-st_transform(point_non_inond,crs = 32628)
+non_inondables<-extract(tif, point_non_inond)
 non_inondables
 ```
+#### Analyse des valeurs extraites ####
 
 ```{r}
-#Combinaison des classes pour créer un seul dataframe
-alt <- c(inondables, non_inondables)
-classes <- factor(c(rep(1, length(inondables)), rep(0, length(non_inondables))))
-classes
-```
-
-```{r}
-data <- data.frame(altitude = alt, classe = classes)
-data
-```
-
-```{r}
-library(stats)
-modele_inond <- glm(classe ~ altitude, data = data, family = "binomial")
-summary(modele_inond)
-```
-```{r}
-# Prédire la probabilité d'inondation
-predictions <- predict(modele_inond, type = "response")
-predictions
-```
-```{r}
-# Créer un dataframe avec les altitudes des pixels du mnt de la zone d'étude
-df_predict <- data.frame(altitude = value_pixel)
-df_predict
-```
-
-```{r}
-predictions <- predict(modele_inond, newdata = df_predict, type = "response")
-```
-
-```{r}
-# Ajouter les prédictions au dataframe
-df_predict$prob_inondable <- predictions
-
-# Afficher les premières lignes du dataframe avec les prédictions
-df_predict
-```
-```{r}
-df_predict$classe_predite <- ifelse(df_predict$prob_inondable > 0.5, 1, 0)
-df_predict
-```
-```{r}
-#Evaluation du modèle
-pred_classes <- ifelse(predictions > 0.5, 1, 0)
-pred_classes
-```
-
-```{r}
-#Extraire les cordonnées du tif
-coords <- coordinates(tif)  # Obtenir les coordonnées des pixels
+#Convertir en Dataframe
+data_inond<-as.data.frame(inondables)
+data_non_inond<-as.data.frame(non_inondables)
 ```
 
 
 ```{r}
-# Créer un dataframe avec les coordonnées et les prédictions
-df_raster <- data.frame(x = coords[,1], y = coords[,2], prediction = as.numeric(predictions))
-
+#compter le nombre des pixels d'enregistrement
+nombre_inond<-table(data_inond$inondables)
+#Convertir en dataframe
+nombre_inond<-as.data.frame(nombre_inond)
+colnames(nombre_inond) <- c("Valeur", "Nombre")
+#visualiser le résultat
+ggplot(nombre_inond, aes(x = Valeur, y = Nombre)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Distribution selon la valeur des pixels",
+       x = "Valeur du pixel",
+       y = "Nombre de pixels") +
+  theme_minimal()
 ```
 
 ```{r}
-# Créer un raster à partir des prédictions
-raster_prediction <- rasterFromXYZ(df_raster)
+#compter le nombre des pixels d'enregistrement
+nombre_non_inond<-table(data_non_inond$non_inondables)
+#Convertir en dataframe
+nombre_non_inond<-as.data.frame(nombre_non_inond)
+colnames(nombre_non_inond) <- c("Valeur", "Nombre")
+#visualiser le résultat
+ggplot(nombre_non_inond, aes(x = Valeur, y = Nombre)) +
+  geom_bar(stat = "identity", fill = "#40e0d0") +
+  labs(title = "Distribution selon la valeur des pixels",
+       x = "Valeur du pixel",
+       y = "Nombre de pixels") +
+  theme_minimal()
+```
+
+### Modéle de Classification ###
+#### Reclassification du Terrain ####
+
+```{r}
+#Methode de reclassification du terrain
+mnt<-mnt_DSM
+mnt[mnt <= 2] <- 0
+mnt[mnt > 2 & mnt <= 4] <- 1
+mnt[mnt > 4 & mnt <= 8] <- 2
+mnt[mnt > 8] <- 3
+plot(mnt)
+title("Reclassification Terrain selon les hauteurs")
+```
+
+### Facteurs Complémentaires ###
+#### Type de sol ####
+```{r}
+Type_sol<-st_read("C:/Users/pc gz/Desktop/Local/Local_traitement/Data/Type_sol.shp")
 ```
 
 ```{r}
-# Afficher le raster des prédictions
-plot(raster_prediction, main = "Raster des prédictions (inondable/non inondable)")
+ggplot(data=Type_sol)+
+  geom_sf(aes(fill = Name))+
+  scale_fill_manual(values = c("orange", "skyblue"),
+                    name = "Types de Sol")+
+  labs(title = "Les types de sol de la Commune de DSM")+
+  theme_minimal()+
+  theme(legend.position = "bottom",
+        legend.background = element_rect(fill = "grey", color = "black"),  # 
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 12))
 ```
-
+#### Analyse typologie du sol + terrain ####
 ```{r}
-couleurs <- c("white", "green", "red")
-plot(raster_prediction, 
-     col = couleurs, 
-     legend = FALSE,  # Désactiver la légende automatique
-     main = "Raster des classes prédictes (Inondable/Non Inondable)")
 
-# Ajouter manuellement la légende
-legend("topright", 
-       legend = c("Non classifié", "Non Inondable", "Inondable"), 
-       fill = couleurs, 
-       border = "black")
-```
 
-```{r}
-# Créer la matrice de confusion
-#table_reelle_vs_predite <- table(data$classe, pred_classes)
 
-# Afficher la matrice de confusion
-#print(table_reelle_vs_predite)
 ```
 
 ## Collecte des zones inondées ##
