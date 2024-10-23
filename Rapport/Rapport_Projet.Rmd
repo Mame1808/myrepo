@@ -48,7 +48,6 @@ library(sp)
 library(leaflet)
 library(viridis)
 library(raster)
-library(sp)
 library(stars)
 library(ggplot2)
 library(terra)
@@ -152,7 +151,7 @@ plot(point_inond)
 
 ```{r}
 #Ajout des points non inondes
-point_non_inond<-st_read("C:/Users/pc gz/Desktop/Local/Local_traitement/Data/Point_Alt.shp")
+point_non_inond<-st_read("C:/Users/KHADY MAME DIARRA/Desktop/Local/Local_traitement/Data/Point_Alt.shp")
 plot(st_geometry(point_non_inond))
 ```
 
@@ -228,7 +227,7 @@ title("Reclassification Terrain selon les hauteurs")
 ### Facteurs Complémentaires ###
 #### Type de sol ####
 ```{r}
-Type_sol<-st_read("C:/Users/pc gz/Desktop/Local/Local_traitement/Data/Type_sol.shp")
+Type_sol<-st_read("C:/Users/KHADY MAME DIARRA/Desktop/Local/Local_traitement/Data/Type_sol.shp")
 ```
 
 ```{r}
@@ -243,10 +242,44 @@ ggplot(data=Type_sol)+
         legend.title = element_text(size = 12),
         legend.text = element_text(size = 12))
 ```
-#### Analyse typologie du sol + terrain ####
 ```{r}
+typesols
+x<-c("Sols ferrugineux tropicaux faiblement lessivés","Sols hydromorphes")
+y<-c(7.15,1.92)
+Sol_area<-data.frame(Type_de_sol=x,Surface=y)
+print(Sol_area)
+
+```
+
+#### Analyse type de sol et élévation du terrain ####
+```{r}
+#Concatenation des deux données
+#Converir les types de sol en raster
+#Charger la donnée
+typesol<-Type_sol
+#Créer un raster vide pour stocker la donnée
+rastype<-raster(typesol,res=30)
+#Rasteriser le type de sol
+typesols<-rasterize(Type_sol,rastype)
+#visualisation
+couleur<-c("grey","brown")
+plot(typesols,col=couleur,main="Sol rasteriser", legend=TRUE)
+```
+
+```{r}
+#Concatenation des deux valeurs
+vul<-rbind(mnt_DSM,typesols)
+```
 
 
+
+```{r}
+# Créer la matrice de confusion
+#table_reelle_vs_predite <- table(data$classe, pred_classes)
+
+# Afficher la matrice de confusion
+#print(table_reelle_vs_predite)
+```
 
 ```
 
