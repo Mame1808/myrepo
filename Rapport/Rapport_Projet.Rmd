@@ -19,30 +19,8 @@ output:
 knitr::opts_chunk$set(echo = FALSE,message = FALSE, warning = FALSE)
 ```
 
-# Résumé #
-
-# Introduction générale #
-## Contexte et justification ##
-
-<div style="text-align: justify;">
-
-Dans un monde en pleine transformation, où le dérèglement climatique s'accentue, les inondations deviennent de plus en plus préoccupantes, représentant un défi majeur pour les décideurs. La croissance démographique dans les grandes villes aggrave ce problème, avec un afflux constant de personnes s'installant en milieu urbain, entraînant une expansion rapide des quartiers périphériques. Cette urbanisation, souvent non encadrée, s'accompagne d'une carence ou d'une absence flagrante de systèmes d'assainissement pluvial, exacerbant ainsi les risques d'inondation. Conscients de ces enjeux et des difficultés rencontrées par les populations, cette étude vise à analyser les facteurs physiques et humains qui influencent directement l'ampleur des inondations, en s'appuyant sur des données géospatiales. Les inondations constituent un phénomène récurrent dans les grandes villes africaines, en particulier dans les zones périphériques, ce qui justifie le choix de la commune de Diamaguène Sicap Mbao comme zone d'étude. Cette analyse est cruciale pour permettre aux acteurs locaux d'intervenir de manière plus efficace auprès des populations confrontées aux problèmes liés aux inondations.
-
-</div>
-
-## Objectif général ##
-<div style="text-align: justify;">
-**L’objectif de cette étude est de faire une
-analyse des zones susceptibles d’être inondées grâce à l’utilisation du modèle
-numérique de terrain et de la collecte des points d’eau**
-</div>
-
-## Objectif spécifique ##
-- *Analyse des facteurs physiques du milieu : la topographie et l’hydrologie*
-- *Analyse la dynamique d’occupation du sol et de la population*
-
 ```{r}
-# Chargement des packages
+# Chargement des packages utilisés
 library(sf)
 library(sp)
 library(leaflet)
@@ -51,36 +29,112 @@ library(raster)
 library(stars)
 library(ggplot2)
 library(terra)
+library(rmarkdown)
+library(jpeg)
+library(ggthemes)
+library(readxl)
 ```
 
-# Présentation de la zone d'étude #
+
+
+# Contexte et justification #
+
+Dans un monde en pleine transformation, où le dérèglement climatique s'accentue, les inondations deviennent de plus en plus préoccupantes, représentant un défi majeur pour les décideurs. La croissance démographique dans les grandes villes aggrave ce problème, avec un afflux constant de personnes s'installant en milieu urbain, entraînant une expansion rapide des quartiers périphériques. Cette urbanisation, souvent non encadrée, s'accompagne d'une carence ou d'une absence flagrante de systèmes d'assainissement pluvial, exacerbant ainsi les risques d'inondation. Conscients de ces enjeux et des difficultés rencontrées par les populations, cette étude vise à analyser les facteurs physiques et humains qui influencent directement l'ampleur des inondations, en s'appuyant sur des données géospatiales. Les inondations constituent un phénomène récurrent dans les grandes villes africaines, en particulier dans les zones périphériques, ce qui justifie le choix de la commune de Diamaguène Sicap Mbao comme zone d'étude. Cette analyse est cruciale pour permettre aux acteurs locaux d'intervenir de manière plus efficace auprès des populations confrontées aux problèmes liés aux inondations.
+
+
+## Présentation de la zone d'étude ##
+
+La commune de Diamaguène Sicap Mbao est située dans le département de Pikine, dans la région de Dakar. Elle est traversée d’ouest en est par la route nationale n°1. Elle est limitée au nord par la voie ferrée, au sud par la commune de Thiaroye-sur-Mer, et à son extrême est par la forêt classée de Mbao. Elle est séparée de l’océan Atlantique par la route nationale et la zone franche industrielle, ce qui explique son relief extrêmement bas.
+
+La commune de Diamaguène Sicap Mbao s’étend sur une superficie de 7,3 km² et compte une population de 139 376 habitants en 2023, répartis entre 71 923 hommes et 67 453 femmes. Sa densité de population, très élevée, est de 19 092 habitants/km², témoignant du surpeuplement de cette commune, qui constitue un véritable dortoir urbain.
+
 
 ```{r}
 #Ajout de la limite de la zone d'etude
-zone_etude<- st_read("Data/Quartiers_comm.shp", quiet = TRUE)
+zone_etude<- st_read("Data/DSM.shp", quiet = TRUE)
 #Reprojection en degree minite seconde
 zone_etude1<-st_transform(zone_etude,crs = 4326)
 ```
 
-
 ```{r}
 #Visualisation de la zone d'etude
-pal <- colorFactor(palette = viridis(length(unique(zone_etude1$QRT_VLG_HA))), 
-                   domain = zone_etude$QRT_VLG_HA)
+
 leaflet(zone_etude1)%>%
   addProviderTiles(providers$OpenStreetMap)%>%
-  addPolygons(color = ~pal(QRT_VLG_HA),
-              fillOpacity = 0.7,
-              weight = 1)%>%
-  setView(lng = -17.352540491056484, lat = 14.767247041989215, zoom = 13)
+  addPolygons(
+              fillOpacity = 0,
+              weight = 5)%>%
+  setView(lng = -17.35297232009253, lat = 14.758706893238436, zoom = 13)
 ```
-# Présentation du projet #
+
+```{r}
+Commune_pop <- read_excel("C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/Commune_pop.xls")
+ggplot(data = Commune_pop, aes(x = POPULATION, y = COMMUNE)) + 
+  geom_bar(stat = "identity", width = 0.5, position = "dodge",fill="blue") + 
+  xlab("Communes de Pikine") +
+  ylab("Population")  +
+  labs(fill = "Isic Code")  +  
+  theme_minimal() + 
+  scale_fill_brewer(direction = -1)
+```
 
 
-## Analyse de la dynamique d'occupation du sol ##
+![Situation géographique](C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/zone.jpeg)
+<div class="width-container">
+  <div>
+![Inclinaison du terrain](Data/Pente.jpg)
+  </div>
+  
+  <div>
+![Elévation du terrain](Data/Altitudes.jpg)
+  </div>
+  
+</div>
 
-# Méthodologie de traitement des données #
 
+# Brève Présentation du projet #
+Ce projet s'inscrit dans le cadre de la gestion participative des citoyens face aux problématiques rencontrées par les populations. Sa mission principale est d'utiliser différentes sources de données géospatiales pour réaliser des analyses basées sur les sciences des données, dans le but d'apporter un soutien aux autorités locales pour la gestion des inondations dans la commune de Diamaguène Sicap Mbao.
+Ce projet fait également partie de l'initiative FOI (Focus 0 Inondation), lancée par de jeunes citoyens sénégalais.
+
+# Objectif du projet #
+
+## Objectif général ##
+
+**L’objectif générale de cette étude est de faire une
+analyse des zones susceptibles d’être inondées grâce à l’utilisation du modèle
+numérique de terrain et de la collecte des points d’eau**
+
+## Objectif spécifique ##
+- *Analyse des facteurs physiques du milieu : la topographie, pédologique et l’hydrologiques*
+- *Mise en place d'une plateforme pour la collecte des zones inondées*
+
+
+
+# Méthodologie #
+
+## Collecte des données ##
+La collecte des données s'est essentiellement effectuée en trois phases :<br>
+**Collecte des données terrain à l'aide du GPS** <br>
+Le GPS (Global Positioning System) est une technologie avancée qui capte le signal des satellites afin de fournir un positionnement précis. Ces positions permettent de déterminer les coordonnées de latitude et de longitude des points d'eau, fournissant ainsi la localisation exacte des zones inondées.<br>
+**Collecte des données satellitaires**<br>
+Les données, telles que le modèle numérique de terrain et la limite de la zone d'étude, ont été téléchargées sur Google Earth Engine, une plateforme d'analyse de données géospatiales développée par Google et basée sur le cloud.<br>
+**Données démographiques**<br>
+Les données démographiques ont été fournies par l'Agence nationale de la statistique et de la démographie.
+
+## Traitement des données ##
+Le traitement des données est essentiellement réalisé avec le langage R. Cependant, il est aussi important de noter que les données brutes de localisation des zones inondées ont été prétraitées avec un logiciel SIG, ArcGIS, afin d'obtenir les données au format SHP.
+Les packages utilisés sont principalement des packages géospatiaux : <br>
+**Pour le traitement des données vecteurs**<br>
+-*Sf*<br>
+-*Sp* <br>
+**Pour le traitement des données Raster **<br>
+-*Raster*<br>
+-*Terra*<br>
+
+## Analyse et visualisation des données ##
+L'analyse des données a été réalisée sur R en utilisant le modèle numérique de terrain. À partir des pixels extraits, une reclassification du terrain a été effectuée, divisant ce dernier en différentes sections basées sur les hauteurs.
+
+# Outils et techniques de traitement #
 # Présentation des résultats #
 
 ## Etude de la topographie de la zone d'étude ##
@@ -243,12 +297,11 @@ ggplot(data=Type_sol)+
         legend.text = element_text(size = 12))
 ```
 ```{r}
-typesols
+#typesols
 x<-c("Sols ferrugineux tropicaux faiblement lessivés","Sols hydromorphes")
 y<-c(7.15,1.92)
 Sol_area<-data.frame(Type_de_sol=x,Surface=y)
 print(Sol_area)
-
 ```
 
 #### Analyse type de sol et élévation du terrain ####
@@ -266,22 +319,7 @@ couleur<-c("grey","brown")
 plot(typesols,col=couleur,main="Sol rasteriser", legend=TRUE)
 ```
 
-```{r}
-#Concatenation des deux valeurs
-vul<-rbind(mnt_DSM,typesols)
-```
 
-
-
-```{r}
-# Créer la matrice de confusion
-#table_reelle_vs_predite <- table(data$classe, pred_classes)
-
-# Afficher la matrice de confusion
-#print(table_reelle_vs_predite)
-```
-
-```
 
 ## Collecte des zones inondées ##
 
