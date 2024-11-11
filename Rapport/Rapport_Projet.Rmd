@@ -1,5 +1,5 @@
 ---
-title: "Rapport Projet n°4 : Analyse multicritère pour la gestion des inondations au Sénégal : cas de la Commune de Diamaguene Sicap Mbao
+title: "Rapport Projet n°4 : Modélisation multicritère pour la gestion des inondations au Sénégal : cas de la Commune de Diamaguene Sicap Mbao
 "
 author: "Khady Mame Diarra SENE"
 date: "2024-06-30"
@@ -112,16 +112,31 @@ numérique de terrain et de la collecte des points d’eau**
 
 # Méthodologie #
 
-## Collecte des données ##
+## Outils et techniques de collecte des données ##
+### outils utilisés ###
+Les outils utilisés pour la collecte des données sont essentiellement :
+-*GPS*
+-*Google Earth Engine*
+-**Application de collecte des données**
+Afin de faciliter la collecte des données, une application de collecte sera créée pour permettre au utilisateurs et aux acteurs intéréssés par la problématique des inondations de pouvoir renseigner la localisation des zones inondées au niveau de la commune. Ceci dans le but d'avoir plus facilement l'inventaire des zones inondées.
+
+
+### Technique de collecte ###
+-*Terrain*
+-*Téléchargement via internet*
+
+
+## Méthodologie de Collecte des données ##
 La collecte des données s'est essentiellement effectuée en trois phases :<br>
 **Collecte des données terrain à l'aide du GPS** <br>
 Le GPS (Global Positioning System) est une technologie avancée qui capte le signal des satellites afin de fournir un positionnement précis. Ces positions permettent de déterminer les coordonnées de latitude et de longitude des points d'eau, fournissant ainsi la localisation exacte des zones inondées.<br>
 **Collecte des données satellitaires**<br>
-Les données, telles que le modèle numérique de terrain et la limite de la zone d'étude, ont été téléchargées sur Google Earth Engine, une plateforme d'analyse de données géospatiales développée par Google et basée sur le cloud.<br>
+Les données, telles que le modèle numérique de terrain avec une résolution spatiale de 30m et la limite de la zone d'étude, ont été téléchargées sur Google Earth Engine, une plateforme d'analyse de données géospatiales développée par Google et basée sur le cloud.<br>
 **Données démographiques**<br>
-Les données démographiques ont été fournies par l'Agence nationale de la statistique et de la démographie.
+Les données démographiques ont été fournies par l'Agence nationale de la statistique et de la démographie.Ces données montre le détail sur la population ainsi que son évolution dans le temps
 
-## Traitement des données ##
+
+## Méthodologie de Traitement des données ##
 Le traitement des données est essentiellement réalisé avec le langage R. Cependant, il est aussi important de noter que les données brutes de localisation des zones inondées ont été prétraitées avec un logiciel SIG, ArcGIS, afin d'obtenir les données au format SHP.
 Les packages utilisés sont principalement des packages géospatiaux : <br>
 **Pour le traitement des données vecteurs**<br>
@@ -131,49 +146,87 @@ Les packages utilisés sont principalement des packages géospatiaux : <br>
 -*Raster*<br>
 -*Terra*<br>
 
+
 ## Analyse et visualisation des données ##
-L'analyse des données a été réalisée sur R en utilisant le modèle numérique de terrain. À partir des pixels extraits, une reclassification du terrain a été effectuée, divisant ce dernier en différentes sections basées sur les hauteurs.
+L'analyse des données a été réalisée sur R en utilisant le modèle numérique de terrain. À partir des pixels extraits, une reclassification du terrain a été effectuée, divisant ce dernier en différentes sections basées sur les hauteurs. Ainsi fait le terrain a été divisé en quatres (zone) : <br>
+- *zone basse * <br>
+- *zone moyennement basse* <br>
+- *zone haute * <br>
+- *zone très haute* <br>
 
-# Outils et techniques de traitement #
-# Présentation des résultats #
+Basant également de la localisation des zones inondées et non inondées, une régression logistique réalisée a permis de départager la zone suivant une classification binaire.Cette méthode affecte la valeur 0 pour les zones non inondées et 1 pour les zones inondées.
 
-## Etude de la topographie de la zone d'étude ##
 
-### Exploitation du modèle numérique de terrain  ###
 
+
+# Présentation des résultats d'analyse des données #
+
+## Format de présentation des résultats ##
+Dans le cadre du projet, deux types de fichiers sont prévus pour la présentation des résultats de notre travail. :<br>
+- **Rapport scientifique **<br>
+Ce rapport présente les différentes étapes, allant de la collecte au traitement et à l'analyse des données, pour atteindre les objectifs fixés. Il fournit également une présentation de l'interface de collecte des données.<br>
+- **Application de collecte des données**<br>
+Il est également prévu un rendu sous forme d'application pour la collecte des zones inondées.
+
+
+## Résultats du traitement des données ##
+
+## Analyse de la topographie de la zone d'étude ##
+- **Exploitation du Modèle numérique de terrain **
+Le modèle numérique de terrain représente les élévations du sol sans tenir compte des constructions, de la végétation, des routes, des plans d'eau, etc. C'est une description numérique de la forme de la surface terrestre.Dans le cadre de cette étude, il a permis de modéliser les différentes élévaltions du terrain.
+-*Ajout du mnt de la région*
+-*Extraction de la commune de DSM*
+-*Visualisation du mnt de la commune DSM*
+<div class="width-container">
+  <div>
 ```{r}
 #Ajout du MNT de la region de Dakar
 mnt<-raster("Data/Mnt_Dk.tif")
 plot(mnt)
 title("Modèle Numérique de Terrain de la région de Dakar")
 ```
-<div>
-### Couper la zone d'étude à partir de la limite ###
+  </div>
+  <div>
 ```{r}
 #Ajouter la limite de la zone d'etude
-zone_DSM<-st_read("Data/Polygone_DSM.shp")
-plot(st_geometry(zone_DSM))
-title("Limite de la zone d'étude")
-```
+zone_DSM<-st_read("Data/DSM.shp",quiet=TRUE)
+# Travailler avec le cadran de la zone d'étude
+cadran_DSM<-st_read("Data/Polygone_DSM.shp",quiet=TRUE)
+mnt_cadran<-mask(mnt,cadran_DSM)
+# Convertir le raster en data.frame pour ggplot
+mnt_cadran_frame <- as.data.frame(rasterToPoints(mnt_cadran))
+colnames(mnt_cadran_frame) <- c("x", "y", "elevation")
 
-```{r}
-mnt_DSM<-crop(mnt,zone_DSM)
-plot(mnt_DSM)
-title("Modèle Numérique de Terrain de la Commune de DSM")
+#Reclassification de la légende en catégorie
+seuil0<-2
+seuil1<-6
+seuil2<-8
+seuil3<-10
+mnt_cadran_frame$elevation_cut<-cut(
+  mnt_cadran_frame$elevation,
+  breaks=c(-Inf,seuil0,seuil1,seuil2,Inf),
+  labels=c("très basse", "basse", "moyennement basse", "haute")
+)
+# Création du plot
+ggplot() +
+  geom_tile(data = mnt_cadran_frame, aes(x = x, y = y, fill = elevation_cut)) +
+  geom_sf(data = zone_DSM, fill = NA, color = "red", size = 2) +  
+  scale_fill_manual(
+    values = c("très basse"="#440154FF", "basse"="#3B528BFF", "moyennement basse"="#21908CFF", "haute"="#5DC863FF"),name="Elévations"
+  ) +
+  theme_minimal() +
+  coord_sf()  
 
 ```
+  </div>
 </div>
+Dans la commune de Diamaguene Sicap Mbao l'élévation du terrain varie de 0 et 12 m par rapport au niveau de la mer.
 
-## Détection des zones inondées à partir du MNT##
 
-<div class="pixel">
-  <div class="raster"> 
-### Apperçue d'un modèle numérique de terrain ###
+-**Apperçue d'un modèle numérique de terrain**
 ```{r}
 #Explication d'un MNT
-par(mfrow = c(2, 2))
-par(mar = rep(1, 4))
-tif<-mnt_DSM
+tif<-mnt_cadran
 image(tif, main = "(a)")
 set.seed(131)
 pts <- st_sample(st_as_sfc(st_bbox(tif)), 3)
