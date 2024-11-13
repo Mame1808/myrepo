@@ -362,8 +362,9 @@ Qui sont tous des éléments fondamentaux dans l'explication des problèmes lié
 ###  Facteurs Complémentaires ###
 #### Type de sol ####
 ```{r}
-Type_sol<-st_read("C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/Type_sol.shp",quiet=TRUE)
+Type_sol<-st_read("Data/Sol.shx",quiet=TRUE)
 ```
+
 
 ```{r}
 ggplot(data=Type_sol)+
