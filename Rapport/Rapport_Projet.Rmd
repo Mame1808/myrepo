@@ -171,12 +171,13 @@ Il est également prévu un rendu sous forme d'application pour la collecte des 
 
 ## Résultats du traitement des données ##
 
-## Analyse de la topographie de la zone d'étude ##
-- **Exploitation du Modèle numérique de terrain **
-Le modèle numérique de terrain représente les élévations du sol sans tenir compte des constructions, de la végétation, des routes, des plans d'eau, etc. C'est une description numérique de la forme de la surface terrestre.Dans le cadre de cette étude, il a permis de modéliser les différentes élévaltions du terrain.
--*Ajout du mnt de la région*
--*Extraction de la commune de DSM*
--*Visualisation du mnt de la commune DSM*
+### Analyse de la topographie de la zone d'étude ###
+- **Exploitation du Modèle numérique de terrain ** <br>
+Le modèle numérique de terrain représente les élévations du sol sans tenir compte des constructions, de la végétation, des routes, des plans d'eau, etc. C'est une description numérique de la forme de la surface terrestre.Dans le cadre de cette étude, il a permis de modéliser les différentes élévaltions du terrain.<br>
+-*Ajout du mnt de la région*<br>
+-*Extraction de la commune de DSM*<br>
+-*Visualisation du mnt de la commune DSM*<br>
+
 <div class="width-container">
   <div>
 ```{r}
@@ -220,65 +221,76 @@ ggplot() +
 ```
   </div>
 </div>
-Dans la commune de Diamaguene Sicap Mbao l'élévation du terrain varie de 0 et 12 m par rapport au niveau de la mer.
+
+Dans la commune de Diamaguene Sicap Mbao l'élévation du terrain varie de 0 et 12 m par rapport au niveau de la mer.<br>
 
 
--**Apperçue d'un modèle numérique de terrain**
+-**Apperçue d'un modèle numérique de terrain**<br>
+-*Extraction de la valeur des pixels*<br>
 ```{r}
 #Explication d'un MNT
-tif<-mnt_cadran
+mnt_DSM<-crop(mnt,cadran_DSM)
+par(mfrow = c(2, 2))
+par(mar = rep(1, 4))
+tif<-mnt_DSM
 image(tif, main = "(a)")
 set.seed(131)
 pts <- st_sample(st_as_sfc(st_bbox(tif)), 3)
 plot(st_buffer(pts, 200), add = TRUE, pch = 3, border = 'blue', col = NA, lwd = 2)
 ```
-  </div>
-  <div class="value">
+<br>
+Dans un modèle numérique de terrain chaque pixel contient une valeur numérique contenant l'altitude du terrain et les coordonnées géographiques. La taille du pixel représente la résolution spatiale de modèle qui est égale à 30m dans le cadre de cette étude.   
+
+
 ```{r}
 # Créer un dataframe avec les valeurs extraites
 value_pixel<-getValues(tif)
 #print(value_pixel)
 df_pixels <- data.frame(matrix(value_pixel[1:50], nrow = 5, byrow = TRUE))
-# Afficher les 10 premières lignes et colonnes
+# Afficher les 5 premières lignes du tif
 print(df_pixels)
 
 ```
-  </div>
-</div>
+Une extraction de la valeur des pixels ainsi que la conversion en dataframe permet de connaitre les diiérentes élévations stockées dans chaque pixel.
 
-### Reclassification des altitudes ###
 
-<div>
-#### Ajouter la localisation des points inondés et non inondés ####
+-**Reclassification des élévations suivant les points collectés**
+<div class="width-container">
+  <div>
 ```{r}
 #Ajout des points inondes
-point_inond<-st_read("Data/Points_d'eau_DSM.shp")
+point_inond<-st_read("Data/Points_d'eau_DSM.shp",quiet=TRUE)
 plot(point_inond)
 ```
-
+  </div>
+  <div>
 ```{r}
 #Ajout des points non inondes
-point_non_inond<-st_read("C:/Users/KHADY MAME DIARRA/Desktop/Local/Local_traitement/Data/Point_Alt.shp")
+point_non_inond<-st_read("C:/Users/KHADY MAME DIARRA/Desktop/Local/Local_traitement/Data/Point_Alt.shp", quiet=TRUE)
 plot(st_geometry(point_non_inond))
 ```
-
+  </div>
 </div>
-### Extraction de la valeur des pixels ###
+Des points collectées sur les parties inondées et non inondées avec un total de 69 points, 24  points sur les zones non inondées et 45 points sur les zones inondées.<br>
 
-#### Extraction des points inondables ####
+Une extraction de la valeur de ces pixels montre que la valeur des zones inondées varie entre 5,6, 7 et 8 m d'élévation tandisque les zones non inondables sont entre les altitudes 8 et 12m d'élévation
+
+
 ```{r}
 point_inond<-st_transform(point_inond,crs = 32628)
 inondables <- extract(tif, point_inond)
 inondables
 
 ```
-#### Extraction des points non inondables ####
+
 ```{r}
 non_inondables<-st_transform(point_non_inond,crs = 32628)
 non_inondables<-extract(tif, point_non_inond)
 non_inondables
 ```
-#### Analyse des valeurs extraites ####
+<div class="width-container"> 
+  <div>
+-*Visualisation des données d'analyse du mnt*
 
 ```{r}
 #Convertir en Dataframe
@@ -296,12 +308,13 @@ colnames(nombre_inond) <- c("Valeur", "Nombre")
 #visualiser le résultat
 ggplot(nombre_inond, aes(x = Valeur, y = Nombre)) +
   geom_bar(stat = "identity", fill = "skyblue") +
-  labs(title = "Distribution selon la valeur des pixels",
+  labs(title = "Distribution selon la valeur des pixels des zones inondées",
        x = "Valeur du pixel",
        y = "Nombre de pixels") +
   theme_minimal()
 ```
-
+  </div>
+  <div>
 ```{r}
 #compter le nombre des pixels d'enregistrement
 nombre_non_inond<-table(data_non_inond$non_inondables)
@@ -316,9 +329,12 @@ ggplot(nombre_non_inond, aes(x = Valeur, y = Nombre)) +
        y = "Nombre de pixels") +
   theme_minimal()
 ```
+  </div>
+</div>
 
 ### Modéle de Classification ###
-#### Reclassification du Terrain ####
+#### *Technique de Reclassification du Terrain* ####
+
 
 ```{r}
 #Methode de reclassification du terrain
@@ -331,10 +347,22 @@ plot(mnt)
 title("Reclassification Terrain selon les hauteurs")
 ```
 
-### Facteurs Complémentaires ###
+#### *Modèle de regression logistique* ####
+```{r}
+
+```
+
+Une reclassification du modèle numérique de terrain et l'application de la classification binaire par la technique de regression logistique montre que l'élévation du terrain uniquement ne suffit pas pour justifier qu'une zone soit inondable ou pas. Donc il est essentielle de prendre en compte d'autres paramètres liés aux : <br>
+-**Type de sol**<br>
+-**L'accumulation des flux du réseau hydrographique**<br>
+-**La couverture réseau en assainissement d'eau pluviale**<br>
+Qui sont tous des éléments fondamentaux dans l'explication des problèmes liés à l'inondation
+
+
+###  Facteurs Complémentaires ###
 #### Type de sol ####
 ```{r}
-Type_sol<-st_read("C:/Users/KHADY MAME DIARRA/Desktop/Local/Local_traitement/Data/Type_sol.shp")
+Type_sol<-st_read("C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/Type_sol.shp",quiet=TRUE)
 ```
 
 ```{r}
@@ -356,30 +384,22 @@ y<-c(7.15,1.92)
 Sol_area<-data.frame(Type_de_sol=x,Surface=y)
 print(Sol_area)
 ```
+La plus grande partie des sols de la commune de Diamaguene Sicap Mbao est constituée de sol ferrugineux tropicaux faiblement lessivés à environ 86% de la surface de la commune. C'est type de sol, grâce à leurs structure granuleuse permettent une infiltration de l'eau. Cependant en cas de forte pluviométrie les sols peuvent se saturer réduisant la vitesse d'infiltration et favorisant ainsi une accumulation des flux.<br>
 
-#### Analyse type de sol et élévation du terrain ####
-```{r}
-#Concatenation des deux données
-#Converir les types de sol en raster
-#Charger la donnée
-typesol<-Type_sol
-#Créer un raster vide pour stocker la donnée
-rastype<-raster(typesol,res=30)
-#Rasteriser le type de sol
-typesols<-rasterize(Type_sol,rastype)
-#visualisation
-couleur<-c("grey","brown")
-plot(typesols,col=couleur,main="Sol rasteriser", legend=TRUE)
-```
+Les sols hydromorphes quant à eux par leur nature saturée sont particulièrement très sensibles aux inondations.
+
+#### Accumulation des flux ####
+
+#### Couverture réseau assainissement ####
 
 
 
-## Collecte des zones inondées ##
+# Présentation de la plateforme de collecte des données #
 
-### Présentation de la plateforme de collecte des données ###
 
-### Exploitation des données collectées ###
 
 # Conclusion et Perspective #
 
-
+# Difficultés Rencontrées et Solutions Employées #
+-**Limite du langage dans le traitement des données spatiales**
+-**Difficultés d'obtenir certaines données sur la couverture du réseau d'assainissement**

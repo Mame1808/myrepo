@@ -28,7 +28,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   # Lecture des fichiers
-  point_eau <- st_read("C:/Users/pc gz/Desktop/SdAfrique/Projet/myrepo/Data/Points_d'eau_DSM.shp")
+  point_eau <- st_read("C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/Points_d'eau_DSM.shp")
   
   if (file.exists("Data/Points_stag.csv")) {
     points_stag <- read.csv2("Data/Points_stag.csv")
