@@ -349,8 +349,24 @@ title("Reclassification Terrain selon les hauteurs")
 
 #### *Modèle de regression logistique* ####
 ```{r}
+# Préparation des données
+
+#Création du dataframe des altitudes
+alt <- c(inondables, non_inondables)
+classes <- factor(c(rep(1, length(inondables)), rep(0, length(non_inondables))))
+data <- data.frame(altitude = alt, classe = classes)
+modele_inond <- glm(classe ~ altitude, data = data, family = "binomial")
+summary(modele_inond)
+```
+```{r}
+#Dataframe du mnt de la zone
+df_predict <- data.frame(altitude = value_pixel)
 
 ```
+
+
+
+
 
 Une reclassification du modèle numérique de terrain et l'application de la classification binaire par la technique de regression logistique montre que l'élévation du terrain uniquement ne suffit pas pour justifier qu'une zone soit inondable ou pas. Donc il est essentielle de prendre en compte d'autres paramètres liés aux : <br>
 -**Type de sol**<br>
