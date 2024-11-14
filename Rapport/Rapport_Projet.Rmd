@@ -77,6 +77,16 @@ ggplot(data = Commune_pop, aes(x = POPULATION, y = COMMUNE)) +
   theme_minimal() + 
   scale_fill_brewer(direction = -1)
 ```
+```{r}
+Pop_2002_2023 <- read_excel("C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/Pop_2002-2023.xls")
+
+ggplot(Pop_2002_2023, aes(x = Année, y = Population)) +
+  geom_bar(stat = "identity", fill = "cyan") +
+  labs(title = "Population 2002, 2013, 2023",
+       x = "Année",
+       y = "Population") +
+  theme_minimal()
+```
 
 
 ![Situation géographique](C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/zone.jpeg)
@@ -324,7 +334,7 @@ colnames(nombre_non_inond) <- c("Valeur", "Nombre")
 #visualiser le résultat
 ggplot(nombre_non_inond, aes(x = Valeur, y = Nombre)) +
   geom_bar(stat = "identity", fill = "#40e0d0") +
-  labs(title = "Distribution selon la valeur des pixels",
+  labs(title = "Distribution selon la valeur des pixels zone non inondées",
        x = "Valeur du pixel",
        y = "Nombre de pixels") +
   theme_minimal()
@@ -406,6 +416,24 @@ La plus grande partie des sols de la commune de Diamaguene Sicap Mbao est consti
 Les sols hydromorphes quant à eux par leur nature saturée sont particulièrement très sensibles aux inondations.
 
 #### Accumulation des flux ####
+```{r}
+#Ajout du fichier de l'accumulation des flux
+Ecoulement_eau<-st_read("C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/Flux_Eau.shp",
+                        quiet=TRUE)
+Ocean<-st_read("C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/Ocean.shp", quiet=TRUE)
+
+#Visualisation
+box_dsm <- st_bbox(cadran_DSM)
+ggplot() +
+  geom_sf(data = zone_DSM, fill = "lightgreen", color = "black") +    
+  geom_sf(data = Ocean, fill = "blue", color = "black") +   
+  geom_sf(data = Ecoulement_eau, color = "blue", size = 2) + 
+  coord_sf(xlim = c(box_dsm["xmin"], box_dsm["xmax"]),
+           ylim = c(box_dsm["ymin"], box_dsm["ymax"])) +
+  labs(title = "Accumulation des flux") +
+  theme_minimal()
+```
+
 
 #### Couverture réseau assainissement ####
 
