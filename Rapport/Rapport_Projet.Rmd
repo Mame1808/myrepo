@@ -33,6 +33,7 @@ library(rmarkdown)
 library(jpeg)
 library(ggthemes)
 library(readxl)
+library(rsample)
 ```
 
 
@@ -367,10 +368,56 @@ classes <- factor(c(rep(1, length(inondables)), rep(0, length(non_inondables))))
 data <- data.frame(altitude = alt, classe = classes)
 modele_inond <- glm(classe ~ altitude, data = data, family = "binomial")
 summary(modele_inond)
+
+# Faire les prediction sur les pixels du mnt
+df_predict <- data.frame(altitude = value_pixel)
 ```
+
 ```{r}
 #Dataframe du mnt de la zone
 df_predict <- data.frame(altitude = value_pixel)
+
+predictions <- predict(modele_inond, newdata = df_predict, type = "response")
+
+#Ajout des prediction dans le dataframe
+df_predict$prob_inondable <- predictions
+
+# Convertir les probabilités en classes binaires (0 ou 1) avec un seuil de 0.5
+df_predict$pred_classe <- ifelse(df_predict$prob_inondable > 0.5, 1, 0)
+
+# Afficher les premières lignes du dataframe avec les prédictions
+head(df_predict)
+
+#Evaluation du modèle
+pred_classes <- ifelse(predictions > 0.5, 1, 0)
+
+#Conversion du résultat en raster
+coords <- coordinates(tif)
+
+df_raster <- data.frame(x = coords[,1], y = coords[,2], prediction = as.numeric(predictions))
+
+# Créer un raster à partir des prédictions
+raster_prediction <- rasterFromXYZ(df_raster)
+plot(raster_prediction, main = "Raster des prédictions (inondable/non inondable)")
+
+# Définition des couleurs
+couleurs <- c("white", "green", "red")
+
+# Affichage du raster avec les couleurs définies et sans légende automatique
+plot(raster_prediction, 
+     col = couleurs, 
+     legend = FALSE,  # Désactiver la légende automatique
+     main = "Raster des classes prédictes (Inondable/Non Inondable)")
+
+# Ajouter la légende manuellement
+legend("bottom", 
+       legend = c("Non Inondable", "Non Classifié", "Inondable"), 
+       fill = couleurs, 
+       border = "black",
+       xpd = TRUE,
+       inset = c(0, -0.3),
+       ncol = 3)
+
 
 ```
 
@@ -433,10 +480,6 @@ ggplot() +
   labs(title = "Accumulation des flux") +
   theme_minimal()
 ```
-
-
-#### Couverture réseau assainissement ####
-
 
 
 # Présentation de la plateforme de collecte des données #
