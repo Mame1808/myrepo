@@ -1,7 +1,8 @@
 ---
 title: "Rapport Projet n°4 : Modélisation multicritère pour la gestion des inondations au Sénégal : cas de la Commune de Diamaguene Sicap Mbao
 "
-author: "Khady Mame Diarra SENE"
+author: "Khady Mame Diarra SENE<br>
+Delali Irène EDOH <br>Ndeye Diobé DIENG"
 date: "2024-06-30"
 
 output:
@@ -67,7 +68,8 @@ leaflet(zone_etude1)%>%
               weight = 5)%>%
   setView(lng = -17.35297232009253, lat = 14.758706893238436, zoom = 13)
 ```
-
+<div class="width-container">
+  <div>
 ```{r}
 Commune_pop <- read_excel("C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/Commune_pop.xls")
 ggplot(data = Commune_pop, aes(x = POPULATION, y = COMMUNE)) + 
@@ -78,6 +80,8 @@ ggplot(data = Commune_pop, aes(x = POPULATION, y = COMMUNE)) +
   theme_minimal() + 
   scale_fill_brewer(direction = -1)
 ```
+  </div>
+  <div>
 ```{r}
 Pop_2002_2023 <- read_excel("C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/Pop_2002-2023.xls")
 
@@ -88,7 +92,8 @@ ggplot(Pop_2002_2023, aes(x = Année, y = Population)) +
        y = "Population") +
   theme_minimal()
 ```
-
+  </div>
+</div>
 
 ![Situation géographique](C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/zone.jpeg)
 <div class="width-container">
@@ -233,7 +238,7 @@ ggplot() +
   </div>
 </div>
 
-Dans la commune de Diamaguene Sicap Mbao l'élévation du terrain varie de 0 et 12 m par rapport au niveau de la mer.<br>
+Dans la commune de Diamaguene Sicap Mbao l'élévation du terrain varie de 2 et 12 m par rapport au niveau de la mer.<br>
 
 
 -**Apperçue d'un modèle numérique de terrain**<br>
@@ -299,10 +304,11 @@ non_inondables<-st_transform(point_non_inond,crs = 32628)
 non_inondables<-extract(tif, point_non_inond)
 non_inondables
 ```
-<div class="width-container"> 
-  <div>
+
 -*Visualisation des données d'analyse du mnt*
 
+<div class="width-container"> 
+  <div>
 ```{r}
 #Convertir en Dataframe
 data_inond<-as.data.frame(inondables)
@@ -344,8 +350,8 @@ ggplot(nombre_non_inond, aes(x = Valeur, y = Nombre)) +
 </div>
 
 ### Modéle de Classification ###
-#### *Technique de Reclassification du Terrain* ####
 
+#### *Technique de Reclassification du Terrain* ####
 
 ```{r}
 #Methode de reclassification du terrain
@@ -359,6 +365,8 @@ title("Reclassification Terrain selon les hauteurs")
 ```
 
 #### *Modèle de regression logistique* ####
+
+-**Préparation des données et Entrainement du modèle**
 ```{r}
 # Préparation des données
 
@@ -367,12 +375,13 @@ alt <- c(inondables, non_inondables)
 classes <- factor(c(rep(1, length(inondables)), rep(0, length(non_inondables))))
 data <- data.frame(altitude = alt, classe = classes)
 modele_inond <- glm(classe ~ altitude, data = data, family = "binomial")
-summary(modele_inond)
+
 
 # Faire les prediction sur les pixels du mnt
 df_predict <- data.frame(altitude = value_pixel)
 ```
 
+-**Prédiction dans la zone DSM** <br>
 ```{r}
 #Dataframe du mnt de la zone
 df_predict <- data.frame(altitude = value_pixel)
@@ -399,7 +408,9 @@ df_raster <- data.frame(x = coords[,1], y = coords[,2], prediction = as.numeric(
 # Créer un raster à partir des prédictions
 raster_prediction <- rasterFromXYZ(df_raster)
 plot(raster_prediction, main = "Raster des prédictions (inondable/non inondable)")
+```
 
+```{r}
 # Définition des couleurs
 couleurs <- c("white", "green", "red")
 
@@ -418,12 +429,7 @@ legend("bottom",
        inset = c(0, -0.3),
        ncol = 3)
 
-
 ```
-
-
-
-
 
 Une reclassification du modèle numérique de terrain et l'application de la classification binaire par la technique de regression logistique montre que l'élévation du terrain uniquement ne suffit pas pour justifier qu'une zone soit inondable ou pas. Donc il est essentielle de prendre en compte d'autres paramètres liés aux : <br>
 -**Type de sol**<br>
@@ -433,9 +439,10 @@ Qui sont tous des éléments fondamentaux dans l'explication des problèmes lié
 
 
 ###  Facteurs Complémentaires ###
+
 #### Type de sol ####
 ```{r}
-Type_sol<-st_read("Data/Sol.shx",quiet=TRUE)
+Type_sol<-st_read("C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/Sol.shx",quiet=TRUE)
 ```
 
 
@@ -462,7 +469,7 @@ La plus grande partie des sols de la commune de Diamaguene Sicap Mbao est consti
 
 Les sols hydromorphes quant à eux par leur nature saturée sont particulièrement très sensibles aux inondations.
 
-#### Accumulation des flux ####
+#### Réseau hydrographique ####
 ```{r}
 #Ajout du fichier de l'accumulation des flux
 Ecoulement_eau<-st_read("C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Data/Flux_Eau.shp",
@@ -480,14 +487,23 @@ ggplot() +
   labs(title = "Accumulation des flux") +
   theme_minimal()
 ```
-
+<br>
+La visualisation du réseau hydrographique à travers l'accumulation des flux montre que la commune est densément drainée. À cela s'ajoutent les problèmes liés à l'imperméabilisation des sols par les constructions, ce qui contribue à l'accentuation des inondations.
 
 # Présentation de la plateforme de collecte des données #
-
+![](C:/Users/KHADY MAME DIARRA/Desktop/SDA/Projet/myrepo/Result/Capture_Interface.png)
 
 
 # Conclusion et Perspective #
+L'analyse de la problématique des inondations dans la commune de Diamaguène Sicap Mbao révèle qu'elles sont accentuées par plusieurs facteurs, tels que la topographie, la nature des sols, le réseau d'accumulation des flux et la couverture hydrographique. Une meilleure connaissance de ces éléments est essentielle pour gérer efficacement cette problématique. Afin de faire face à la problématique des inondation il est nécessaire de :<br>
 
-# Difficultés Rencontrées et Solutions Employées #
--**Limite du langage dans le traitement des données spatiales**
--**Difficultés d'obtenir certaines données sur la couverture du réseau d'assainissement**
+-**Aménagement Urbain** : Limiter l’urbanisation non controlée dans les zones vulnérables <br>
+-**Engagement Communautaire** : Utiliser les plateforme de collecte participative pour signaler les
+inondations.<br>
+-**Assainissement** : Une couverture du réseau d'assainissement pluvial sur l'ensemble de la commune.<br>
+
+
+
+# Difficultés Rencontrées #
+-**Limite du langage dans le traitement des données spatiales**<br>
+-**Difficultés d'obtenir certaines données sur la couverture du réseau d'assainissement**<br>
